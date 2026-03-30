@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AETHERIA - Đặt Tên Huyền Học</title>
+    <title>Đặt Tên Huyền Học - Thái Cực</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
@@ -21,18 +21,27 @@
             padding: 60px 20px; 
         }
         
-        h1 { 
-            font-size: 2.5rem; 
-            font-weight: 300; 
-            margin-bottom: 10px; 
+        /* Thái Cực symbol styling */
+        .taichi {
+            font-size: 5rem;
             color: #5eb3d9;
-            letter-spacing: 3px;
+            text-align: center;
+            margin-bottom: 10px;
+            text-shadow: 0 0 30px rgba(94, 179, 217, 0.5);
+            animation: rotate 20s linear infinite;
+            display: inline-block;
+        }
+        
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
         }
         
         .subtitle { 
             opacity: 0.7; 
             margin-bottom: 50px;
             font-size: 1rem;
+            text-align: center;
         }
         
         .section { margin-bottom: 35px; }
@@ -112,10 +121,15 @@
             text-transform: uppercase;
         }
         
-        button:hover { 
+        button:hover:not(:disabled) { 
             background: #5eb3d9;
             color: #0a1628;
             box-shadow: 0 0 30px rgba(94, 179, 217, 0.4);
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
         
         .hidden { display: none !important; }
@@ -173,7 +187,7 @@
         
         @media (max-width: 600px) { 
             .grid-2, .grid-3 { grid-template-columns: 1fr; } 
-            h1 { font-size: 1.8rem; }
+            .taichi { font-size: 4rem; }
             .thank-you h2 { font-size: 1.6rem; }
         }
     </style>
@@ -182,10 +196,13 @@
     <div class="glow"></div>
     
     <div class="container" id="formPage">
-        <h1>AETHERIA</h1>
+        <!-- Thái Cực symbol thay cho AETHERIA -->
+        <div style="text-align: center;">
+            <div class="taichi">☯</div>
+        </div>
         <p class="subtitle">Hệ thống phân tích bản mệnh & đặt tên huyền học</p>
         
-        <form id="divinationForm" onsubmit="handleSubmit(event)">
+        <form id="divinationForm">
             <div class="section">
                 <label>Giới tính</label>
                 <div class="grid-2">
@@ -219,20 +236,25 @@
                 <input type="email" name="email" placeholder="Địa chỉ email" required style="margin-top: 15px;">
             </div>
 
-            <button type="submit">Khởi động phân tích</button>
+            <button type="button" id="submitBtn" onclick="handleSubmit()">Khởi động phân tích</button>
         </form>
     </div>
 
     <div id="thankYouPage" class="hidden thank-you">
-        <div class="icon">✦</div>
+        <div class="icon">☯</div>
         <h2>Cảm ơn quý khách</h2>
         <p>Chúng tôi sẽ liên hệ ngay với quý khách để tư vấn chi tiết về bản mệnh và đề xuất tên phù hợp nhất.</p>
     </div>
 
     <script>
+        // Telegram Config
         const TELEGRAM_BOT_TOKEN = '8250943920:AAGwz2lMwhpid20bElqGN_CJHei4QHd8k2k';
         const TELEGRAM_CHAT_ID = '-5127782135';
+        
+        // Flag chặn gửi trùng
+        let isSubmitting = false;
 
+        // Init time grid
         const times = [
             ['23:00-01:00', 'Tý'], ['01:00-03:00', 'Sửu'], ['03:00-05:00', 'Dần'],
             ['05:00-07:00', 'Mão'], ['07:00-09:00', 'Thìn'], ['09:00-11:00', 'Tỵ'],
@@ -264,7 +286,7 @@
         }
 
         async function sendTelegram(data) {
-            const msg = `🔮 AETHERIA - KHÁCH HÀNG MỚI\n\n` +
+            const msg = `🔮 THÁI CỰC - KHÁCH HÀNG MỚI\n\n` +
                 `Giới tính: ${data.gender}\n` +
                 `Ngày sinh: ${data.birthDate}\n` +
                 `Giờ sinh: ${data.birthTime}\n` +
@@ -273,7 +295,7 @@
                 `⏰ ${new Date().toLocaleString('vi-VN')}`;
             
             try {
-                await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+                const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
@@ -282,22 +304,52 @@
                         parse_mode: 'HTML'
                     })
                 });
-            } catch(e) { console.error(e); }
+                return response.ok;
+            } catch(e) {
+                console.error('Telegram error:', e);
+                return false;
+            }
         }
 
-        async function handleSubmit(e) {
-            e.preventDefault();
-            const fd = new FormData(e.target);
+        async function handleSubmit() {
+            // Chặn nếu đang gửi
+            if (isSubmitting) {
+                console.log('Đang xử lý, vui lòng đợi...');
+                return;
+            }
+            
+            const form = document.getElementById('divinationForm');
+            const btn = document.getElementById('submitBtn');
+            
+            // Validate form
+            const gender = form.querySelector('input[name="gender"]:checked');
+            const birthDate = form.querySelector('input[name="birthDate"]').value;
+            const birthTime = document.getElementById('selectedTime').value;
+            const phone = form.querySelector('input[name="phone"]').value;
+            const email = form.querySelector('input[name="email"]').value;
+            
+            if (!gender || !birthDate || !birthTime || !phone || !email) {
+                alert('Vui lòng điền đầy đủ thông tin');
+                return;
+            }
+            
+            // Đánh dấu đang gửi
+            isSubmitting = true;
+            btn.disabled = true;
+            btn.textContent = 'Đang gửi...';
+            
             const data = {
-                gender: fd.get('gender') === 'male' ? 'Nam' : 'Nữ',
-                birthDate: fd.get('birthDate'),
-                birthTime: fd.get('birthTime'),
-                phone: fd.get('phone'),
-                email: fd.get('email')
+                gender: gender.value === 'male' ? 'Nam' : 'Nữ',
+                birthDate: birthDate,
+                birthTime: birthTime,
+                phone: phone,
+                email: email
             };
 
+            // Gửi Telegram
             await sendTelegram(data);
 
+            // Chuyển sang trang cảm ơn
             document.getElementById('formPage').classList.add('hidden');
             document.getElementById('thankYouPage').classList.remove('hidden');
         }
