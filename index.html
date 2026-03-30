@@ -21,7 +21,6 @@
             padding: 60px 20px; 
         }
         
-        /* Thái Cực symbol styling */
         .taichi {
             font-size: 5rem;
             color: #5eb3d9;
@@ -196,13 +195,13 @@
     <div class="glow"></div>
     
     <div class="container" id="formPage">
-        <!-- Thái Cực symbol thay cho AETHERIA -->
         <div style="text-align: center;">
             <div class="taichi">☯</div>
         </div>
         <p class="subtitle">Hệ thống phân tích bản mệnh & đặt tên huyền học</p>
         
         <form id="divinationForm">
+            <!-- Giới tính -->
             <div class="section">
                 <label>Giới tính</label>
                 <div class="grid-2">
@@ -219,17 +218,26 @@
                 </div>
             </div>
 
+            <!-- Họ của khách hàng - THÊM MỚI -->
+            <div class="section">
+                <label>Họ của khách hàng</label>
+                <input type="text" name="ho" placeholder="Nhập họ (ví dụ: Nguyễn, Trần, Lê...)" required>
+            </div>
+
+            <!-- Ngày sinh -->
             <div class="section">
                 <label>Ngày sinh (Dương lịch)</label>
                 <input type="date" name="birthDate" required>
             </div>
 
+            <!-- Giờ sinh -->
             <div class="section">
                 <label>Giờ sinh</label>
                 <div class="grid-3" id="timeGrid"></div>
                 <input type="hidden" name="birthTime" id="selectedTime" required>
             </div>
 
+            <!-- Liên hệ -->
             <div class="section">
                 <label>Thông tin liên hệ</label>
                 <input type="tel" name="phone" placeholder="Số điện thoại" required>
@@ -251,7 +259,6 @@
         const TELEGRAM_BOT_TOKEN = '8250943920:AAGwz2lMwhpid20bElqGN_CJHei4QHd8k2k';
         const TELEGRAM_CHAT_ID = '-5127782135';
         
-        // Flag chặn gửi trùng
         let isSubmitting = false;
 
         // Init time grid
@@ -287,6 +294,7 @@
 
         async function sendTelegram(data) {
             const msg = `🔮 THÁI CỰC - KHÁCH HÀNG MỚI\n\n` +
+                `Họ: ${data.ho}\n` +
                 `Giới tính: ${data.gender}\n` +
                 `Ngày sinh: ${data.birthDate}\n` +
                 `Giờ sinh: ${data.birthTime}\n` +
@@ -312,7 +320,6 @@
         }
 
         async function handleSubmit() {
-            // Chặn nếu đang gửi
             if (isSubmitting) {
                 console.log('Đang xử lý, vui lòng đợi...');
                 return;
@@ -323,22 +330,23 @@
             
             // Validate form
             const gender = form.querySelector('input[name="gender"]:checked');
+            const ho = form.querySelector('input[name="ho"]').value;
             const birthDate = form.querySelector('input[name="birthDate"]').value;
             const birthTime = document.getElementById('selectedTime').value;
             const phone = form.querySelector('input[name="phone"]').value;
             const email = form.querySelector('input[name="email"]').value;
             
-            if (!gender || !birthDate || !birthTime || !phone || !email) {
+            if (!gender || !ho || !birthDate || !birthTime || !phone || !email) {
                 alert('Vui lòng điền đầy đủ thông tin');
                 return;
             }
             
-            // Đánh dấu đang gửi
             isSubmitting = true;
             btn.disabled = true;
             btn.textContent = 'Đang gửi...';
             
             const data = {
+                ho: ho,
                 gender: gender.value === 'male' ? 'Nam' : 'Nữ',
                 birthDate: birthDate,
                 birthTime: birthTime,
@@ -346,10 +354,8 @@
                 email: email
             };
 
-            // Gửi Telegram
             await sendTelegram(data);
 
-            // Chuyển sang trang cảm ơn
             document.getElementById('formPage').classList.add('hidden');
             document.getElementById('thankYouPage').classList.remove('hidden');
         }
