@@ -1,0 +1,225 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SHINMYO - Đặt Tên Huyền Học</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Georgia', serif;
+            background: #0a0a0a;
+            color: #f5f5f0;
+            line-height: 1.6;
+        }
+        .container { max-width: 800px; margin: 0 auto; padding: 40px 20px; }
+        h1 { font-size: 3rem; font-weight: 300; margin-bottom: 10px; color: #c73e1d; }
+        .subtitle { opacity: 0.6; margin-bottom: 40px; }
+        .section { margin-bottom: 40px; }
+        label { display: block; font-size: 0.8rem; opacity: 0.6; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 2px; }
+        input, select {
+            width: 100%;
+            background: transparent;
+            border: none;
+            border-bottom: 1px solid rgba(245,245,240,0.2);
+            color: #f5f5f0;
+            padding: 15px 0;
+            font-size: 1.1rem;
+            font-family: inherit;
+            outline: none;
+        }
+        input:focus { border-bottom-color: #c73e1d; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+        .card {
+            border: 1px solid rgba(245,245,240,0.1);
+            padding: 20px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s;
+        }
+        .card:hover, .card.selected { border-color: #c73e1d; background: rgba(199,62,29,0.05); }
+        .card .jp { font-size: 1.5rem; opacity: 0.6; margin-bottom: 5px; }
+        button {
+            background: transparent;
+            border: 1px solid #f5f5f0;
+            color: #f5f5f0;
+            padding: 20px 40px;
+            font-size: 1rem;
+            letter-spacing: 3px;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.4s;
+        }
+        button:hover { background: #c73e1d; border-color: #c73e1d; }
+        .hidden { display: none !important; }
+        .result { padding: 20px 0; border-left: 2px solid #c73e1d; padding-left: 30px; margin: 20px 0; }
+        .result h3 { font-size: 0.9rem; opacity: 0.6; margin-bottom: 10px; }
+        .result .big { font-size: 2.5rem; color: #c73e1d; }
+        .loading { text-align: center; padding: 100px 20px; }
+        .loading h2 { font-size: 2rem; animation: pulse 2s infinite; }
+        @keyframes pulse { 0%,100% { opacity: 0.3; } 50% { opacity: 1; } }
+        @media (max-width: 600px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } h1 { font-size: 2rem; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- HERO -->
+        <div id="hero">
+            <h1>真名 SHINMYO</h1>
+            <p class="subtitle">Hệ thống đặt tên theo bản mệnh phương Đông</p>
+            <button onclick="showForm()">BẮT ĐẦU</button>
+        </div>
+
+        <!-- FORM -->
+        <div id="form" class="hidden">
+            <form id="divinationForm" onsubmit="handleSubmit(event)">
+                
+                <div class="section">
+                    <label>Giới tính</label>
+                    <div class="grid-2">
+                        <div class="card" onclick="selectGender('male', this)">
+                            <div class="jp">男</div>
+                            <div>Nam</div>
+                            <input type="radio" name="gender" value="male" hidden required>
+                        </div>
+                        <div class="card" onclick="selectGender('female', this)">
+                            <div class="jp">女</div>
+                            <div>Nữ</div>
+                            <input type="radio" name="gender" value="female" hidden>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <label>Ngày sinh (Dương lịch)</label>
+                    <input type="date" name="birthDate" required>
+                </div>
+
+                <div class="section">
+                    <label>Giờ sinh (Canh giờ)</label>
+                    <div class="grid-3" id="timeGrid"></div>
+                    <input type="hidden" name="birthTime" id="selectedTime" required>
+                </div>
+
+                <div class="section">
+                    <label>Liên hệ</label>
+                    <input type="tel" name="phone" placeholder="Số điện thoại" required>
+                    <input type="email" name="email" placeholder="Email" required style="margin-top: 15px;">
+                </div>
+
+                <button type="submit">KHỞI ĐỘNG PHÂN TÍCH</button>
+            </form>
+        </div>
+
+        <!-- LOADING -->
+        <div id="loading" class="hidden loading">
+            <h2>計算中</h2>
+            <p>Đang phân tích bản mệnh...</p>
+        </div>
+
+        <!-- RESULTS -->
+        <div id="result" class="hidden">
+            <h1 style="font-size: 2rem;">Kết quả phân tích</h1>
+            
+            <div class="result">
+                <h3>NGŨ HÀNH</h3>
+                <div class="big" id="element">Hỏa</div>
+            </div>
+
+            <div class="result">
+                <h3>CAN CHI</h3>
+                <div style="font-size: 1.5rem;" id="canChi">Bính Dần</div>
+            </div>
+
+            <div class="result">
+                <h3>SỐ MỆNH</h3>
+                <div class="big" id="soMenh">9</div>
+            </div>
+
+            <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
+                <p style="opacity: 0.6; font-size: 0.9rem;">Thông tin đã gửi đến:</p>
+                <p style="color: #c73e1d;" id="confirmPhone"></p>
+                <p style="color: #c73e1d;" id="confirmEmail"></p>
+            </div>
+
+            <button onclick="location.reload()" style="margin-top: 30px;">LÀM LẠI</button>
+        </div>
+    </div>
+
+    <script>
+        // Telegram Config
+        const TELEGRAM_BOT_TOKEN = '8250943920:AAGwz2lMwhpid20bElqGN_CJHei4QHd8k2k';
+        const TELEGRAM_CHAT_ID = '-5127782135';
+
+        // Init time grid
+        const times = [['Tý','23-01'],['Sửu','01-03'],['Dần','03-05'],['Mão','05-07'],['Thìn','07-09'],['Tỵ','09-11'],['Ngọ','11-13'],['Mùi','13-15'],['Thân','15-17'],['Dậu','17-19'],['Tuất','19-21'],['Hợi','21-23']];
+        const tg = document.getElementById('timeGrid');
+        times.forEach(([n,t]) => {
+            tg.innerHTML += `<div class="card" onclick="selectTime('${n} (${t}h)', this)"><div style="font-weight: bold;">${n}</div><div style="font-size: 0.8rem; opacity: 0.6;">${t}h</div></div>`;
+        });
+
+        function showForm() {
+            document.getElementById('hero').classList.add('hidden');
+            document.getElementById('form').classList.remove('hidden');
+        }
+
+        function selectGender(val, el) {
+            document.querySelectorAll('input[name="gender"]').forEach(i => i.checked = false);
+            el.querySelector('input').checked = true;
+            document.querySelectorAll('#form .card').forEach(c => c.classList.remove('selected'));
+            el.classList.add('selected');
+        }
+
+        function selectTime(val, el) {
+            document.getElementById('selectedTime').value = val;
+            tg.querySelectorAll('.card').forEach(c => c.classList.remove('selected'));
+            el.classList.add('selected');
+        }
+
+        async function sendTelegram(data) {
+            const msg = `🔮 SHINMYO - KHÁCH MỚI\n\nGiới tính: ${data.gender}\nNgày: ${data.birthDate}\nGiờ: ${data.birthTime}\nSĐT: ${data.phone}\nEmail: ${data.email}\n\n⏰ ${new Date().toLocaleString('vi-VN')}`;
+            
+            try {
+                await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({chat_id: TELEGRAM_CHAT_ID, text: msg, parse_mode: 'HTML'})
+                });
+            } catch(e) { console.error(e); }
+        }
+
+        async function handleSubmit(e) {
+            e.preventDefault();
+            const fd = new FormData(e.target);
+            const data = {
+                gender: fd.get('gender') === 'male' ? 'Nam' : 'Nữ',
+                birthDate: fd.get('birthDate'),
+                birthTime: fd.get('birthTime'),
+                phone: fd.get('phone'),
+                email: fd.get('email')
+            };
+
+            await sendTelegram(data);
+
+            document.getElementById('form').classList.add('hidden');
+            document.getElementById('loading').classList.remove('hidden');
+
+            await new Promise(r => setTimeout(r, 2000));
+
+            const elements = ['Kim','Mộc','Thủy','Hỏa','Thổ'];
+            const canChi = ['Giáp Tý','Ất Sửu','Bính Dần','Đinh Mão','Mậu Thìn','Kỷ Tỵ','Canh Ngọ','Tân Mùi','Nhâm Thân','Quý Dậu'];
+            
+            document.getElementById('element').textContent = elements[Math.floor(Math.random()*5)];
+            document.getElementById('canChi').textContent = canChi[Math.floor(Math.random()*10)];
+            document.getElementById('soMenh').textContent = Math.floor(Math.random()*9)+1;
+            document.getElementById('confirmPhone').textContent = data.phone;
+            document.getElementById('confirmEmail').textContent = data.email;
+
+            document.getElementById('loading').classList.add('hidden');
+            document.getElementById('result').classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
