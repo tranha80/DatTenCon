@@ -112,15 +112,10 @@
             text-transform: uppercase;
         }
         
-        button:hover:not(:disabled) { 
+        button:hover { 
             background: #5eb3d9;
             color: #0a1628;
             box-shadow: 0 0 30px rgba(94, 179, 217, 0.4);
-        }
-        
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
         }
         
         .hidden { display: none !important; }
@@ -190,7 +185,7 @@
         <h1>AETHERIA</h1>
         <p class="subtitle">Hệ thống phân tích bản mệnh & đặt tên huyền học</p>
         
-        <form id="divinationForm">
+        <form id="divinationForm" onsubmit="handleSubmit(event)">
             <div class="section">
                 <label>Giới tính</label>
                 <div class="grid-2">
@@ -224,7 +219,7 @@
                 <input type="email" name="email" placeholder="Địa chỉ email" required style="margin-top: 15px;">
             </div>
 
-            <button type="button" id="submitBtn" onclick="handleSubmit()">Khởi động phân tích</button>
+            <button type="submit">Khởi động phân tích</button>
         </form>
     </div>
 
@@ -235,14 +230,9 @@
     </div>
 
     <script>
-        // Telegram Config
         const TELEGRAM_BOT_TOKEN = '8250943920:AAGwz2lMwhpid20bElqGN_CJHei4QHd8k2k';
         const TELEGRAM_CHAT_ID = '-5127782135';
-        
-        // Flag chặn gửi trùng
-        let isSubmitting = false;
 
-        // Init time grid
         const times = [
             ['23:00-01:00', 'Tý'], ['01:00-03:00', 'Sửu'], ['03:00-05:00', 'Dần'],
             ['05:00-07:00', 'Mão'], ['07:00-09:00', 'Thìn'], ['09:00-11:00', 'Tỵ'],
@@ -283,7 +273,7 @@
                 `⏰ ${new Date().toLocaleString('vi-VN')}`;
             
             try {
-                const response = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+                await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
@@ -292,58 +282,22 @@
                         parse_mode: 'HTML'
                     })
                 });
-                return response.ok;
-            } catch(e) {
-                console.error('Telegram error:', e);
-                return false;
-            }
+            } catch(e) { console.error(e); }
         }
 
-        async function handleSubmit() {
-            // Chặn nếu đang gửi hoặc đã gửi thành công
-            if (isSubmitting) {
-                console.log('Đang xử lý, vui lòng đợi...');
-                return;
-            }
-            
-            const form = document.getElementById('divinationForm');
-            const btn = document.getElementById('submitBtn');
-            
-            // Validate form
-            const gender = form.querySelector('input[name="gender"]:checked');
-            const birthDate = form.querySelector('input[name="birthDate"]').value;
-            const birthTime = document.getElementById('selectedTime').value;
-            const phone = form.querySelector('input[name="phone"]').value;
-            const email = form.querySelector('input[name="email"]').value;
-            
-            if (!gender || !birthDate || !birthTime || !phone || !email) {
-                alert('Vui lòng điền đầy đủ thông tin');
-                return;
-            }
-            
-            // Đánh dấu đang gửi
-            isSubmitting = true;
-            btn.disabled = true;
-            btn.textContent = 'Đang gửi...';
-            
+        async function handleSubmit(e) {
+            e.preventDefault();
+            const fd = new FormData(e.target);
             const data = {
-                gender: gender.value === 'male' ? 'Nam' : 'Nữ',
-                birthDate: birthDate,
-                birthTime: birthTime,
-                phone: phone,
-                email: email
+                gender: fd.get('gender') === 'male' ? 'Nam' : 'Nữ',
+                birthDate: fd.get('birthDate'),
+                birthTime: fd.get('birthTime'),
+                phone: fd.get('phone'),
+                email: fd.get('email')
             };
 
-            // Gửi Telegram
-            const success = await sendTelegram(data);
-            
-            if (success) {
-                console.log('Gửi thành công');
-            } else {
-                console.log('Gửi thất bại nhưng vẫn chuyển trang');
-            }
+            await sendTelegram(data);
 
-            // Chuyển sang trang cảm ơn
             document.getElementById('formPage').classList.add('hidden');
             document.getElementById('thankYouPage').classList.remove('hidden');
         }
